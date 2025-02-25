@@ -43,8 +43,9 @@ void bootApp (std::string bruh) {
 //---------------------------------------------------------------------------------
 	if((access(bruh.c_str(), F_OK) == 0)) {
 		const char *argarray[] = {bruh.c_str()};
-		int err = runNdsFile(argarray[0], 1, argarray, false);
-		iprintf("oof: Error %i\n", err);
+		// int err = runNdsFile(argarray[0], 1, argarray, false);
+		int err = runNdsFile(argarray[0], 0, NULL, false);
+		printf("oof: Error %i\n", err);
 		stop();
 	} else {
 		printf("oof: %s not found", bruh.c_str());
@@ -76,7 +77,7 @@ int main(int argc, char **argv) {
 	consoleInit(NULL, 1, BgType_Text4bpp, BgSize_T_256x256, 15, 0, false, true);
 
 	if (!fatInitDefault()) {
-		iprintf ("fatInitDefault failed!\n");
+		printf ("fatInitDefault failed!\n");
 		stop();
 	}
 
@@ -121,17 +122,17 @@ int main(int argc, char **argv) {
 	int pressed = keysHeld();
 
 	if ((pressed & (KEY_A | KEY_B)) == (KEY_A | KEY_B)) { // menu
-		if((access("_nds/Relaunch/menu.bin", F_OK) == 0)) {
-			runNdsFile("_nds/Relaunch/menu.bin", 0, NULL, false);
+		if((access("_nds/Relaunch/rbmenu.nds", F_OK) == 0)) {
+			runNdsFile("_nds/Relaunch/rbmenu.nds", 0, NULL, false);
 		} else {
-			printf("Error:\nmenu.bin wasn't found!");
+			printf("Error:\nrbmenu.nds wasn't found!");
 			stop();
 		}
 	} else if ((pressed & (KEY_A | KEY_X)) == (KEY_A | KEY_X)) { // menu alt
-		if((access("_nds/Relaunch/menu.bin", F_OK) == 0)) {
-			runNdsFile("_nds/Relaunch/menu.bin", 0, NULL, false);
+		if((access("_nds/Relaunch/rbmenu.nds", F_OK) == 0)) {
+			runNdsFile("_nds/Relaunch/rbmenu.nds", 0, NULL, false);
 		} else {
-			printf("Error:\nmenu.bin wasn't found!");
+			printf("Error:\nrbmenu.nds wasn't found!");
 			stop();
 		}
 	} else if (pressed & KEY_A) {

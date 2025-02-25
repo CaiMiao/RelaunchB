@@ -34,21 +34,33 @@ bool sdMounted = false, sdMountedDone = false;	// true if SD mount is successful
 }*/
 
 TWL_CODE bool sdMount(void) {
-	fatMountSimple("sd", get_io_dsisd());
-	if (access("sd:/", F_OK) == 0) {
-		sdMountedDone = true;
-		// fatGetVolumeLabel("sd", sdLabel);
-		// fixLabel(false);
-		return true;
-	}
-	return false;
+	// fatMountSimple("sd", get_io_dsisd());
+	// if (access("sd:/", F_OK) == 0) {
+	// 	sdMountedDone = true;
+	// 	// fatGetVolumeLabel("sd", sdLabel);
+	// 	// fixLabel(false);
+	// 	return true;
+	// }
+	// return false;
+	return bStyleMount("sd:/", sdMountedDone);
 }
 
 bool flashcardMount(void) {
-	fatInitDefault();
-	if (access("fat:/", F_OK) == 0) {
-		// fatGetVolumeLabel("fat", fatLabel);
-		// fixLabel(true);
+	// fatInitDefault();
+	// if (access("fat:/", F_OK) == 0) {
+	// 	// fatGetVolumeLabel("fat", fatLabel);
+	// 	// fixLabel(true);
+	// 	return true;
+	// }
+	// return false;
+	return bStyleMount("fat:/", std::nullopt);
+}
+
+bool bStyleMount(const char *__path, std::optional<bool> __boolStatus) {
+	bool init_ok = fatInitDefault();
+	if (init_ok && access(__path, F_OK) == 0)
+	{
+		__boolStatus = true;
 		return true;
 	}
 	return false;

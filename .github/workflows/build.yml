@@ -1,16 +1,18 @@
 name: Build Relaunch
 
 on:
-  push:
-    branches-ignore: [translation]
-    paths-ignore:
-      - 'README.md'
-  pull_request:
-    branches: ["*"]
-    paths-ignore:
-      - 'README.md'
-  release:
-    types: [created]
+  # push:
+  #   branches-ignore: [translation]
+  #   paths-ignore:
+  #     - 'README.md'
+  # pull_request:
+  #   branches: ["*"]
+  #   paths-ignore:
+  #     - 'README.md'
+  # release:
+  #   types: [created]
+  repository_dispatch:
+  workflow_dispatch:
 
 jobs:
   build:

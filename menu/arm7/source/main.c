@@ -1,33 +1,15 @@
-/*---------------------------------------------------------------------------------
+// xSPDX-License-Identifier: Zlib
+//
+// Copyright (C) 2005 Michael Noland (joat)
+// Copyright (C) 2005 Jason Rogers (Dovoto)
+// Copyright (C) 2005-2015 Dave Murphy (WinterMute)
+// Copyright (C) 2023 Antonio Niño Díaz
 
-	default ARM7 core
+// Default ARM7 core
 
-		Copyright (C) 2005 - 2010
-		Michael Noland (joat)
-		Jason Rogers (dovoto)
-		Dave Murphy (WinterMute)
-
-	This software is provided 'as-is', without any express or implied
-	warranty.  In no event will the authors be held liable for any
-	damages arising from the use of this software.
-
-	Permission is granted to anyone to use this software for any
-	purpose, including commercial applications, and to alter it and
-	redistribute it freely, subject to the following restrictions:
-
-	1.	The origin of this software must not be misrepresented; you
-		must not claim that you wrote the original software. If you use
-		this software in a product, an acknowledgment in the product
-		documentation would be appreciated but is not required.
-
-	2.	Altered source versions must be plainly marked as such, and
-		must not be misrepresented as being the original software.
-
-	3.	This notice may not be removed or altered from any source
-		distribution.
-
----------------------------------------------------------------------------------*/
+// #include <dswifi7.h>
 #include <nds.h>
+// #include <maxmod7.h>
 
 unsigned int * SCFG_EXT=(unsigned int*)0x4004008;
 
@@ -38,73 +20,76 @@ void ReturntoDSiMenu() {
 	i2cWriteRegister(0x4A, 0x11, 0x01);		// Reset to DSi Menu
 }
 
-//---------------------------------------------------------------------------------
-void VblankHandler(void) {
-//---------------------------------------------------------------------------------
-	if(fifoCheckValue32(FIFO_USER_02)) {
-		ReturntoDSiMenu();
-	}
+volatile bool exit_loop = false;
+
+void power_button_callback(void)
+{
+    exit_loop = true;
 }
 
-//---------------------------------------------------------------------------------
-void VcountHandler() {
-//---------------------------------------------------------------------------------
-	inputGetAndSend();
+void vblank_handler(void)
+{
+    inputGetAndSend();
+    // Wifi_Update();
 }
 
-volatile bool exitflag = false;
-
-//---------------------------------------------------------------------------------
-void powerButtonCB() {
-//---------------------------------------------------------------------------------
-	exitflag = true;
-}
-
-//---------------------------------------------------------------------------------
-int main() {
-//---------------------------------------------------------------------------------
+int main(int argc, char *argv[])
+{
     nocashMessage("ARM7 main.c main");
-	
-	// clear sound registers
-	dmaFillWords(0, (void*)0x04000400, 0x100);
+    // Initialize sound hardware
+    enableSound();
 
-	REG_SOUNDCNT |= SOUND_ENABLE;
-	writePowerManagement(PM_CONTROL_REG, ( readPowerManagement(PM_CONTROL_REG) & ~PM_SOUND_MUTE ) | PM_SOUND_AMP );
-	powerOn(POWER_SOUND);
+    // Read user information from the firmware (name, birthday, etc)
+    readUserSettings();
 
-	readUserSettings();
+    // Stop LED blinking
+    // ledBlink(0);
 
-	irqInit();
-	// Start the RTC tracking IRQ
-	initClockIRQ();
+    // Using the calibration values read from the firmware with
+    // readUserSettings(), calculate some internal values to convert raw
+    // coordinates into screen coordinates.
+    // touchInit();
 
-	touchInit();
+    irqInit();
+    fifoInit();
 
-	fifoInit();
-	
-	SetYtrigger(80);
-	
-	installSystemFIFO();
+    // installSoundFIFO();
+    installSystemFIFO(); // Sleep mode, storage, firmware...
+    // installWifiFIFO();
+    // if (isDSiMode())
+    //     installCameraFIFO();
 
-	irqSet(IRQ_VCOUNT, VcountHandler);
-	irqSet(IRQ_VBLANK, VblankHandler);
+    // Initialize Maxmod. It uses timer 0 internally.
+    // mmInstall(FIFO_MAXMOD);
 
-	irqEnable( IRQ_VBLANK | IRQ_VCOUNT );
+    // This sets a callback that is called when the power button in a DSi
+    // console is pressed. It has no effect in a DS.
+    setPowerButtonCB(power_button_callback);
 
-	setPowerButtonCB(powerButtonCB);
+    // Read current date from the RTC and setup an interrupt to update the time
+    // regularly. The interrupt simply adds one second every time, it doesn't
+    // read the date. Reading the RTC is very slow, so it's a bad idea to do it
+    // frequently.
+    initClockIRQTimer(3);
+
+    // Now that the FIFO is setup we can start sending input data to the ARM9.
+    irqSet(IRQ_VBLANK, vblank_handler);
+    irqEnable(IRQ_VBLANK);
 	
 	fifoSendValue32(FIFO_USER_03, *SCFG_EXT);
 	fifoSendValue32(FIFO_USER_07, *(u16*)(0x4004700));
 	fifoSendValue32(FIFO_USER_06, 1);
 
-	// Keep the ARM7 mostly idle
-	while (!exitflag) {
-		if ( 0 == (REG_KEYINPUT & (KEY_SELECT | KEY_START | KEY_L | KEY_R))) {
-			exitflag = true;
-		}
-		resyncClock();
-		swiWaitForVBlank();
-	}
-	return 0;
-}
+    while (!exit_loop)
+    {
+        const uint16_t key_mask = KEY_SELECT | KEY_START | KEY_L | KEY_R;
+        uint16_t keys_pressed = ~REG_KEYINPUT;
 
+        if ((keys_pressed & key_mask) == key_mask)
+            exit_loop = true;
+
+        swiWaitForVBlank();
+    }
+
+    return 0;
+}

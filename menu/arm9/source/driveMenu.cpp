@@ -26,7 +26,7 @@ void dm_drawTopScreen(std::vector<DirEntry> dmItems, int startRow) {
 	printf ("\x1b[3;0H");
 
 	for (int i = 0; i < ((int)dmItems.size() - startRow) && i < ENTRIES_PER_SCREEN; i++) {
-		iprintf ("\x1b[%d;0H", i + ENTRIES_START_ROW);
+		printf ("\x1b[%d;0H", i + ENTRIES_START_ROW);
 		if (dmCursorPosition == i + startRow) {
 			//printf ("\x1b[46m# ");		// Print foreground cyan color
 			printf("# ");
@@ -65,8 +65,8 @@ void driveMenu (std::vector<DirEntry> ndsFiles) {
 	std::vector<DirEntry> dmItems = ndsFiles;
 	int pressed = 0;
 
-	if (access("sd:/_nds/Relaunch/menu.bin", F_OK) == 0
-	|| access("fat:/_nds/Relaunch/menu.bin", F_OK) == 0) {
+	if (access("sd:/_nds/Relaunch/rbmenu.nds", F_OK) == 0
+	|| access("fat:/_nds/Relaunch/rbmenu.nds", F_OK) == 0) {
 		DirEntry options;
 		options.name = "OPTIONS";
 		dmItems.insert(dmItems.begin(), options);
@@ -166,9 +166,10 @@ void driveMenu (std::vector<DirEntry> ndsFiles) {
 				dmTextPrinted = false;
 				consoleClear();
 				const char *argarray[] = {dmItems[dmCursorPosition].fullPath.c_str()};
-				int err = runNdsFile(argarray[0], 1, argarray, false);
+				// int err = runNdsFile(argarray[0], 1, argarray, false);
+				int err = runNdsFile(argarray[0], 0, NULL, false);
 				//int err = runNdsFile(argarray[0], argarray.size(), argarray[0], false);
-				iprintf("Uuhhh.wav (oof): Error %i\n", err);
+				printf("Uuhhh.wav (oof): Error %i\n", err);
 				break;
 			}
 		}

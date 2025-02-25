@@ -55,7 +55,7 @@ void eq_drawTopScreen (std::vector<std::string> eqItems, int startRow) {
 	printf ("\x1b[3;0H");
 
 	for (int i = 0; i < ((int)eqItems.size() - startRow) && i < ENTRIES_PER_SCREEN; i++) {
-		iprintf ("\x1b[%d;0H", i + ENTRIES_START_ROW);
+		printf ("\x1b[%d;0H", i + ENTRIES_START_ROW);
 		if (eqCursorPosition == i + startRow) {
 			//printf ("\x1b[46m# ");		// Print foreground cyan color
 			printf("# ");
@@ -76,7 +76,7 @@ void eq_drawTopScreenDirEntry (std::vector<DirEntry> eqItems, int startRow, char
 	printf ("\x1b[3;0H");
 
 	for (int i = 0; i < ((int)eqItems.size() - startRow) && i < ENTRIES_PER_SCREEN; i++) {
-		iprintf ("\x1b[%d;0H", i + ENTRIES_START_ROW);
+		printf ("\x1b[%d;0H", i + ENTRIES_START_ROW);
 		if (eqCursorPosition == i + startRow) {
 			//printf ("\x1b[46m# ");		// Print foreground cyan color
 			printf("# ");
@@ -92,7 +92,7 @@ void eq_drawTopScreenDirEntry (std::vector<DirEntry> eqItems, int startRow, char
 	}
 }
 
-void eq_drawBottomScreen (void) {
+void eq_drawBottomScreen (bool isFixed) {
 	printf ("\x1b[23;0H");
 	printf (titleName);
 
@@ -102,7 +102,13 @@ void eq_drawBottomScreen (void) {
 	printf("\x1b[0;1H");
 	printf ("\n\n\n\n\n\nPUB SIZE: 00000000");
 	printf ("\nPRV SIZE: 00000000\n");
-	printf ("sett:");
+	if (isFixed) printf ("sett:");
+}
+
+void eq_drawBottomScreenDirEntry (std::vector<DirEntry> ndsFiles) {
+	eq_drawBottomScreen(false);
+	printf("(menu is in DS%s Mode)\n", isDSiMode() ? "i" : "");
+	printf ("%s", ndsFiles[eqCursorPosition].fullPath.c_str());
 }
 
 void eqMenu (std::vector<DirEntry> ndsFiles) {
@@ -110,8 +116,8 @@ void eqMenu (std::vector<DirEntry> ndsFiles) {
 	eqTextPrinted = false;
 
 	std::vector<std::string> eqItems;
-	if (access("sd:/_nds/Relaunch/menu.bin", F_OK) == 0
-	|| access("fat:/_nds/Relaunch/menu.bin", F_OK) == 0) {
+	if (access("sd:/_nds/Relaunch/rbmenu.nds", F_OK) == 0
+	|| access("fat:/_nds/Relaunch/rbmenu.nds", F_OK) == 0) {
 		eqItems.push_back("NO BUTTON");
 		eqItems.push_back("BUTTON A");
 		eqItems.push_back("BUTTON B");
@@ -146,7 +152,7 @@ void eqMenu (std::vector<DirEntry> ndsFiles) {
 			}
 
 			setFontSub();
-			eq_drawBottomScreen();
+			eq_drawBottomScreen(true);
 			setFontTop();
 			eq_drawTopScreen(eqItems, eqScreenPosition);
 
@@ -197,6 +203,9 @@ void eqMenu (std::vector<DirEntry> ndsFiles) {
 						selectionScreenOffset = eqCursorPosition - ENTRIES_PER_SCREEN + 1;
 					}
 
+					setFontSub();
+					eq_drawBottomScreenDirEntry(ndsFiles);
+					setFontTop();
 					char msg[64];
 					snprintf (msg, sizeof(msg), "\nSelect title for %s", buttonNames[curPos].c_str());
 					eq_drawTopScreenDirEntry(ndsFiles, selectionScreenOffset, msg);

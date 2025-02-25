@@ -32,7 +32,7 @@ void setFontTop() {
 	font.numColors =  fontPalLen / 2;
 	font.bpp = 4;
 	font.asciiOffset = 32;
-	font.convertSingleColor = false;
+	// font.convertSingleColor = false;
 	consoleSetFont(console, &font);
 }
 
@@ -45,7 +45,7 @@ void setFontSub() {
 	font.numColors =  fontPalLen / 2;
 	font.bpp = 4;
 	font.asciiOffset = 32;
-	font.convertSingleColor = false;
+	// font.convertSingleColor = false;
 	consoleSetFont(console, &font);
 }
 
@@ -127,9 +127,9 @@ int main(int argc, char **argv) {
 	if(appInited) {
 		if (!nitroFSInit(argv[0])) {
 			if(sdMounted) {
-				nitroFSInit("sd:/_nds/Relaunch/menu.bin");	
+				nitroFSInit("sd:/_nds/Relaunch/rbmenu.nds");	
 			} else {
-				nitroFSInit("fat:/_nds/Relaunch/menu.bin");
+				nitroFSInit("fat:/_nds/Relaunch/rbmenu.nds");
 			}
 		}
 

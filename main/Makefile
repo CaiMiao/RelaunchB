@@ -1,199 +1,106 @@
-#---------------------------------------------------------------------------------
-.SUFFIXES:
-#---------------------------------------------------------------------------------
-.SECONDARY:
+# xSPDX-License-Identifier: CC0-1.0
+#
+# xSPDX-FileContributor: Antonio Niño Díaz, 2023
 
-ifeq ($(strip $(DEVKITARM)),)
-$(error "Please set DEVKITARM in your environment. export DEVKITARM=<path to>devkitARM")
-endif
+BLOCKSDS	?= /opt/blocksds/core
+BLOCKSDSEXT	?= /opt/blocksds/external
 
-include $(DEVKITARM)/ds_rules
+# User config
+# ===========
 
-export VERSION_MAJOR	:= 1
-export VERSION_MINOR	:= 0
-export VERSION_PATCH	:= 0
+NAME		:= RelaunchB
 
+GAME_TITLE	:= RelaunchB
+GAME_SUBTITLE	:= Built with BlocksDS
+GAME_AUTHOR	:= github.com/blocksds/sdk
+GAME_ICON	:= icon2.bmp
 
-VERSION	:=	$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH)
-#---------------------------------------------------------------------------------
-# TARGET is the name of the output
-# BUILD is the directory where object files & intermediate files will be placed
-# SOURCES is a list of directories containing source code
-# INCLUDES is a list of directories containing extra header files
-# DATA is a list of directories containing binary files embedded using bin2o
-# GRAPHICS is a list of directories containing image files to be converted with grit
-#---------------------------------------------------------------------------------
-TARGET		:=	Relaunch
-BUILD		:=	build
-SOURCES		:=	source
-INCLUDES	:=	include
-DATA		:=	data
+# DLDI and internal SD slot of DSi
+# --------------------------------
 
-#---------------------------------------------------------------------------------
-# options for code generation
-#---------------------------------------------------------------------------------
-ARCH	:=	-mthumb -mthumb-interwork
+# Root folder of the SD image
+SDROOT		:= sdroot
+# Name of the generated image it "DSi-1.sd" for no$gba in DSi mode
+SDIMAGE		:= image.bin
 
-CFLAGS	:=	-g -Wall -O2 \
-		-ffunction-sections -fdata-sections \
- 		-march=armv5te -mtune=arm946e-s -fomit-frame-pointer\
-		-ffast-math \
-		$(ARCH)
+# Source code paths
+# -----------------
 
-CFLAGS	+=	$(INCLUDE) -DARM9
-CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=c++11
+# List of folders to combine into the root of NitroFS:
+NITROFSDIR	:=
 
-ASFLAGS	:=	-g $(ARCH)
-LDFLAGS	=	-specs=ds_arm9.specs -g -Wl,--gc-sections $(ARCH) -Wl,-Map,$(notdir $*.map)
+# Tools
+# -----
 
+MAKE		:= make
+RM		:= rm -rf
 
-#---------------------------------------------------------------------------------
-# list of directories containing libraries, this must be the top level containing
-# include and lib
-#---------------------------------------------------------------------------------
-LIBDIRS	:=	$(LIBNDS)
+# Verbose flag
+# ------------
 
-#---------------------------------------------------------------------------------
-# no real need to edit anything past this point unless you need to add additional
-# rules for different file extensions
-#---------------------------------------------------------------------------------
-ifneq ($(BUILD),$(notdir $(CURDIR)))
-#---------------------------------------------------------------------------------
-export TOPDIR	:=	$(CURDIR)
-
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
-
-export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
-
-export DEPSDIR	:=	$(CURDIR)/$(BUILD)
-
-CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-BINFILES	:=	load.bin bootstub.bin
-
-#---------------------------------------------------------------------------------
-# use CXX for linking C++ projects, CC for standard C
-#---------------------------------------------------------------------------------
-ifeq ($(strip $(CPPFILES)),)
-#---------------------------------------------------------------------------------
-	export LD	:=	$(CC)
-#---------------------------------------------------------------------------------
+ifeq ($(VERBOSE),1)
+V		:=
 else
-#---------------------------------------------------------------------------------
-	export LD	:=	$(CXX)
-#---------------------------------------------------------------------------------
-endif
-#---------------------------------------------------------------------------------
-
-export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
-					$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
-
-export INCLUDE	:=	$(foreach dir,$(INCLUDES),-iquote $(CURDIR)/$(dir)) \
-					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
-					-I$(CURDIR)/$(BUILD)
-
-export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
-
-icons := $(wildcard *.bmp)
-
-ifneq (,$(findstring $(TARGET).bmp,$(icons)))
-	export GAME_ICON := $(CURDIR)/$(TARGET).bmp
-else
-	ifneq (,$(findstring icon.bmp,$(icons)))
-		export GAME_ICON := $(CURDIR)/icon.bmp
-	endif
+V		:= @
 endif
 
-export GAME_TITLE := $(TARGET)
+# Directories
+# -----------
 
-.PHONY: bootloader bootstub clean arm7/$(TARGET).elf arm9/$(TARGET).elf
+ARM9DIR		:= arm9
+ARM7DIR		:= arm7
 
-all:	bootloader bootstub $(TARGET).nds
+# Build artfacts
+# --------------
 
-dist:	all
-	@rm	-fr	hbmenu
-	@mkdir hbmenu
-	@cp $(TARGET).nds hbmenu/BOOT.NDS
-	@cp BootStrap/_BOOT_MP.NDS BootStrap/TTMENU.DAT BootStrap/_DS_MENU.DAT BootStrap/ez5sys.bin BootStrap/akmenu4.nds hbmenu
-	@tar -cvjf $(TARGET)-$(VERSION).tar.bz2 hbmenu testfiles README.html COPYING hbmenu -X exclude.lst
+ROM		:= $(NAME).nds
 
-$(TARGET).nds:	$(TARGET).arm7 $(TARGET).arm9
-	ndstool	-c $(TARGET).nds -7 $(TARGET).arm7.elf -9 $(TARGET).arm9.elf \
-			-z 80040000 -u 00030004 -a 00000143 -b icon.bmp "Relaunch;Universal-Team"
+# Targets
+# -------
 
-$(TARGET).arm7: arm7/$(TARGET).elf
-	cp arm7/$(TARGET).elf $(TARGET).arm7.elf
+.PHONY: all clean arm9 arm7 dldipatch sdimage
 
-$(TARGET).arm9: arm9/$(TARGET).elf
-	cp arm9/$(TARGET).elf $(TARGET).arm9.elf
+all: $(ROM)
 
-#---------------------------------------------------------------------------------
-arm7/$(TARGET).elf:
-	@$(MAKE) -C arm7
-
-#---------------------------------------------------------------------------------
-arm9/$(TARGET).elf:
-	@$(MAKE) -C arm9
-
-#---------------------------------------------------------------------------------
-#$(BUILD):
-	#@[ -d $@ ] || mkdir -p $@
-	#@make --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
-#---------------------------------------------------------------------------------
 clean:
-	@echo clean ...
-	@rm -fr data
-	@rm -fr $(BUILD) $(TARGET).elf
-	@rm -fr $(TARGET).arm7.elf
-	@rm -fr $(TARGET).arm9.elf
-	@$(MAKE) -C bootloader clean
-	@$(MAKE) -C bootstub clean
-	@$(MAKE) -C arm9 clean
-	@$(MAKE) -C arm7 clean
+	@echo "  CLEAN"
+	$(V)$(MAKE) -f Makefile.arm9 clean --no-print-directory
+	$(V)$(MAKE) -f Makefile.arm7 clean --no-print-directory
+	$(V)$(RM) $(ROM) build $(SDIMAGE)
 
-data:
-	@mkdir -p data
+arm9:
+	$(V)+$(MAKE) -f Makefile.arm9 --no-print-directory
 
-bootloader: data
-	@$(MAKE) -C bootloader
+arm7:
+	$(V)+$(MAKE) -f Makefile.arm7 --no-print-directory
 
-bootstub: data
-	@$(MAKE) -C bootstub
+ifneq ($(strip $(NITROFSDIR)),)
+# Additional arguments for ndstool
+NDSTOOL_ARGS	:= -z 80040000 -u 00030004 -a 00000143 -d $(NITROFSDIR)
 
-#---------------------------------------------------------------------------------
-else
-
-#---------------------------------------------------------------------------------
-# main targets
-#---------------------------------------------------------------------------------
-#$(OUTPUT).nds	: 	$(OUTPUT).elf
-#$(OUTPUT).elf	:	$(OFILES)
-
-#---------------------------------------------------------------------------------
-%.bin.o	:	%.bin
-#---------------------------------------------------------------------------------
-	@echo $(notdir $<)
-	$(bin2o)
-
-#---------------------------------------------------------------------------------
-# This rule creates assembly source files using grit
-# grit takes an image file and a .grit describing how the file is to be processed
-# add additional rules like this for each image extension
-# you use in the graphics folders 
-#---------------------------------------------------------------------------------
-%.s %.h	: %.bmp %.grit
-#---------------------------------------------------------------------------------
-	grit $< -fts -o$*
-
-
-#---------------------------------------------------------------------------------
-%.s %.h   : %.png %.grit
-#---------------------------------------------------------------------------------
-	grit $< -fts -o$*
-
--include $(DEPSDIR)/*.d
-
-#---------------------------------------------------------------------------------------
+# Make the NDS ROM depend on the filesystem only if it is needed
+$(ROM): $(NITROFSDIR)
 endif
-#---------------------------------------------------------------------------------------
+
+# Combine the title strings
+ifeq ($(strip $(GAME_SUBTITLE)),)
+    GAME_FULL_TITLE := $(GAME_TITLE);$(GAME_AUTHOR)
+else
+    GAME_FULL_TITLE := $(GAME_TITLE);$(GAME_SUBTITLE);$(GAME_AUTHOR)
+endif
+
+$(ROM): arm9 arm7
+	@echo "  NDSTOOL $@"
+	$(V)$(BLOCKSDS)/tools/ndstool/ndstool -c $@ \
+		-7 build/arm7.elf -9 build/arm9.elf \
+		-b $(GAME_ICON) "$(GAME_FULL_TITLE)" \
+		$(NDSTOOL_ARGS)
+
+sdimage:
+	@echo "  MKFATIMG $(SDIMAGE) $(SDROOT)"
+	$(V)$(BLOCKSDS)/tools/mkfatimg/mkfatimg -t $(SDROOT) $(SDIMAGE)
+
+dldipatch: $(ROM)
+	@echo "  DLDIPATCH $(ROM)"
+	$(V)$(BLOCKSDS)/tools/dldipatch/dldipatch patch \
+		$(BLOCKSDS)/sys/dldi_r4/r4tf.dldi $(ROM)

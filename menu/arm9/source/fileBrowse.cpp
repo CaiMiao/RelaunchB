@@ -6,6 +6,12 @@
     StackZ
 ------------------------------------------------------------------*/
 #include "includes.h"
+#include <set>
+#include <unordered_map>
+
+// std::string fSlash = "/";
+std::string strFatRoot = "fat:/";
+std::string strSdRoot = "sd:/";
 
 bool nameEndsWith(const std::string& name, const std::vector<std::string>& extensionList) {
 	if(name.substr(0, 2) == "._") return false;
@@ -32,8 +38,60 @@ bool dirEntryPredicate (const DirEntry& lhs, const DirEntry& rhs) {
 }
 
 void findNdsFiles(std::vector<DirEntry>& dirContents) {
-	std::vector<std::string> extensionList = {"nds", "dsi", "srl"};
+	std::vector<std::string> extensionList = {"nds", "dsi", "srl", "srldr"};
 	findFiles(dirContents, extensionList);
+}
+
+std::set<std::string> mpSet{
+	strFatRoot, strSdRoot
+};
+
+std::unordered_map<std::string, std::set<std::string>> ignorePathMap{
+	{
+		"", {
+			"_nds",
+			"_gba",
+			"_dstwo",
+			"_dsone",
+			"__aio",
+			"__akaio",
+			"__rpg",
+			"_wfwd",
+			"gm9i",
+			"DCIM",
+			"private",
+			"3ds",
+			"gm9",
+			"luma",
+			"Nintendo 3DS",
+			"switch",
+			"atmosphere",
+			"Nintendo",
+			"retroarch",
+			"roms",
+			"games" // todo?: user configurable (bounty: $0 :)
+		}
+	},
+	{
+		"_nds", {
+			"nds-bootstrap",
+			"TWiLightMenu"
+		}
+	},
+};
+
+bool bStyleDirNameComparsion (std::string path, std::string name) {
+	for (auto its = mpSet.begin();  its != mpSet.end(); its++)
+	{
+		for (auto itm = ignorePathMap.begin(); itm != ignorePathMap.end(); itm++)
+		{
+			if (path.compare(*its + itm->first) == 0)
+				if (itm->second.find(name) != itm->second.end())
+					return false; // ignored path and name
+		}
+		
+	}
+	return true;
 }
 
 void findFiles(std::vector<DirEntry>& dirContents, std::vector<std::string> extensionList) {
@@ -41,12 +99,13 @@ void findFiles(std::vector<DirEntry>& dirContents, std::vector<std::string> exte
 	DIR *pdir = opendir(".");
 
 	if (pdir == NULL) {
-		iprintf("Internal error, unable to open the directory.");
+		printf("Internal error, unable to open the directory.");
 		for(int i=0;i<120;i++)
 			swiWaitForVBlank();
 	} else {
 		char path[PATH_MAX];
 		getcwd(path, PATH_MAX);
+		std::string strPath{path};
 		while (true) {
 			DirEntry dirEntry;
 
@@ -55,35 +114,39 @@ void findFiles(std::vector<DirEntry>& dirContents, std::vector<std::string> exte
 
 			stat(pent->d_name, &st);
 			dirEntry.name = pent->d_name;
-			dirEntry.fullPath = path + dirEntry.name;
+			if (mpSet.find(strPath) != mpSet.end())
+				dirEntry.fullPath = strPath + dirEntry.name;
+			else
+				dirEntry.fullPath = strPath + "/" + dirEntry.name;
 			dirEntry.isDirectory = (st.st_mode & S_IFDIR) ? true : false;
 			if(!(dirEntry.isDirectory) && dirEntry.name.length() >= 3) {
 				if (nameEndsWith(dirEntry.name, extensionList)) {
 					dirContents.push_back(dirEntry);
 				}
-			} else if (dirEntry.isDirectory 
-				&& dirEntry.name.compare(".") != 0 
+			} else if (dirEntry.isDirectory
+				&& dirEntry.name.compare(".") != 0
 				&& dirEntry.name.compare("..") != 0
-				&& dirEntry.name.compare("_nds/nds-bootstrap") != 0
-				&& dirEntry.name.compare("_nds/TWiLightMenu") != 0
-				&& dirEntry.name.compare("_gba") != 0
-				&& dirEntry.name.compare("3ds") != 0
-				&& dirEntry.name.compare("DCIM") != 0
-				&& dirEntry.name.compare("gm9") != 0
-				&& dirEntry.name.compare("luma") != 0
-				&& dirEntry.name.compare("Nintendo 3DS") != 0
-				&& dirEntry.name.compare("private") != 0
-				&& dirEntry.name.compare("retroarch") != 0
-				&& dirEntry.name.compare("roms/sms") != 0
-				&& dirEntry.name.compare("roms/sg1000") != 0
-				&& dirEntry.name.compare("roms/gen") != 0
-				&& dirEntry.name.compare("roms/snes") != 0
-				&& dirEntry.name.compare("roms/nes") != 0
-				&& dirEntry.name.compare("roms/gb") != 0
-				&& dirEntry.name.compare("roms/gbc") != 0
-				&& dirEntry.name.compare("roms/gba") != 0
-				&& dirEntry.name.compare("roms/gg") != 0
-				&& dirEntry.name.compare("roms/nds/saves") != 0) {
+				// && dirEntry.name.compare("_nds/nds-bootstrap") != 0
+				// && dirEntry.name.compare("_nds/TWiLightMenu") != 0
+				// && dirEntry.name.compare("_gba") != 0
+				// && dirEntry.name.compare("3ds") != 0
+				// && dirEntry.name.compare("DCIM") != 0
+				// && dirEntry.name.compare("gm9") != 0
+				// && dirEntry.name.compare("luma") != 0
+				// && dirEntry.name.compare("Nintendo 3DS") != 0
+				// && dirEntry.name.compare("private") != 0
+				// && dirEntry.name.compare("retroarch") != 0
+				// && dirEntry.name.compare("roms/sms") != 0
+				// && dirEntry.name.compare("roms/sg1000") != 0
+				// && dirEntry.name.compare("roms/gen") != 0
+				// && dirEntry.name.compare("roms/snes") != 0
+				// && dirEntry.name.compare("roms/nes") != 0
+				// && dirEntry.name.compare("roms/gb") != 0
+				// && dirEntry.name.compare("roms/gbc") != 0
+				// && dirEntry.name.compare("roms/gba") != 0
+				// && dirEntry.name.compare("roms/gg") != 0
+				// && dirEntry.name.compare("roms/nds/saves") != 0) {
+				&& bStyleDirNameComparsion(strPath, dirEntry.name)) {
 				chdir(dirEntry.name.c_str());
 				findNdsFiles(dirContents);
 				chdir("..");
