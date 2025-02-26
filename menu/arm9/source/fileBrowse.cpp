@@ -12,6 +12,9 @@
 // std::string fSlash = "/";
 std::string strFatRoot = "fat:/";
 std::string strSdRoot = "sd:/";
+std::set<std::string> setMp{
+	strFatRoot, strSdRoot
+};
 
 bool nameEndsWith(const std::string& name, const std::vector<std::string>& extensionList) {
 	if(name.substr(0, 2) == "._") return false;
@@ -42,11 +45,7 @@ void findNdsFiles(std::vector<DirEntry>& dirContents) {
 	findFiles(dirContents, extensionList);
 }
 
-std::set<std::string> mpSet{
-	strFatRoot, strSdRoot
-};
-
-std::unordered_map<std::string, std::set<std::string>> ignorePathMap{
+std::unordered_map<std::string, std::set<std::string>> mapIgnoredPath{
 	{
 		"", {
 			"_nds",
@@ -81,15 +80,15 @@ std::unordered_map<std::string, std::set<std::string>> ignorePathMap{
 };
 
 bool bStyleDirNameComparsion (std::string path, std::string name) {
-	for (auto its = mpSet.begin();  its != mpSet.end(); its++)
+	for (auto its = setMp.rbegin();  its != setMp.rend(); its++)
 	{
-		for (auto itm = ignorePathMap.begin(); itm != ignorePathMap.end(); itm++)
-		{
-			if (path.compare(*its + itm->first) == 0)
-				if (itm->second.find(name) != itm->second.end())
-					return false; // ignored path and name
-		}
-		
+		if (path.substr(0,sizeof(*its)).compare(*its) == 0)
+			for (auto itm = mapIgnoredPath.begin(); itm != mapIgnoredPath.end(); itm++)
+			{
+				if (path.compare(*its + itm->first) == 0)
+					if (itm->second.find(name) != itm->second.end())
+						return false; // ignored path and name
+			}
 	}
 	return true;
 }
@@ -114,7 +113,7 @@ void findFiles(std::vector<DirEntry>& dirContents, std::vector<std::string> exte
 
 			stat(pent->d_name, &st);
 			dirEntry.name = pent->d_name;
-			if (mpSet.find(strPath) != mpSet.end())
+			if (setMp.find(strPath) != setMp.end())
 				dirEntry.fullPath = strPath + dirEntry.name;
 			else
 				dirEntry.fullPath = strPath + "/" + dirEntry.name;

@@ -181,6 +181,9 @@ void eqMenu (std::vector<DirEntry> ndsFiles) {
 		} else if ((pressed & KEY_DOWN) && eqCursorPosition < (int)eqItems.size()-1) {
 			eqCursorPosition++;
 			eqTextPrinted = false;
+		} else if ((pressed & KEY_UP) && eqCursorPosition == 0) {
+			eqCursorPosition = 17;
+			eqTextPrinted = false;
 		}
 
 		if (pressed & KEY_B) {
