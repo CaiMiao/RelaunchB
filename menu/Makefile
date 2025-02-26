@@ -76,7 +76,7 @@ arm7:
 
 ifneq ($(strip $(NITROFSDIR)),)
 # Additional arguments for ndstool
-NDSTOOL_ARGS	:= -d $(NITROFSDIR)
+NDSTOOL_ARGS	:= -d $(NITROFSDIR) -z 80040000 -u 00030004 -a 00000143
 
 # Make the NDS ROM depend on the filesystem only if it is needed
 $(ROM): $(NITROFSDIR)

@@ -28,7 +28,7 @@ BINDIRS		:= ../data
 # Defines passed to all files
 # ---------------------------
 
-DEFINES		:= -DSAMPLE_DEFINE -DSAMPLE_DEFINE_WITH_VALUE=123
+DEFINES		:= -DAPP_VERSION=\"\\nRelaunchBruh.nds\ $(GIT_VER)\" -D_NO_BOOTSTUB_
 
 # Libraries
 # ---------
@@ -120,8 +120,7 @@ CFLAGS		+= -std=gnu17 $(WARNFLAGS) $(DEFINES) $(INCLUDEFLAGS) \
 CXXFLAGS	+= -std=gnu++17 $(WARNFLAGS) $(DEFINES) $(INCLUDEFLAGS) \
 		   $(ARCH) -O2 -ffunction-sections -fdata-sections \
 		   -fno-exceptions -fno-rtti \
-		   -specs=$(SPECS) \
-		   -DAPP_VERSION=\"\\nRelaunchBruh.nds\ $(GIT_VER)\"
+		   -specs=$(SPECS)
 
 LDFLAGS		:= $(ARCH) $(LIBDIRSFLAGS) -Wl,-Map,$(MAP) $(DEFINES) \
 		   -Wl,--start-group $(LIBS) -Wl,--end-group -specs=$(SPECS)
