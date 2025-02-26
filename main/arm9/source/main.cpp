@@ -30,10 +30,22 @@
 #include <fat.h>
 #include "common/nds_loader_arm9.h"
 #include "common/inifile.h"
+
+volatile bool exit_loop = false;
 //---------------------------------------------------------------------------------
 void stop (void) {
 //---------------------------------------------------------------------------------
-	while (1) {
+	while (!exit_loop) {
+        const uint16_t key_mask = KEY_SELECT | KEY_START | KEY_L | KEY_R;
+        uint16_t keys_pressed = ~REG_KEYINPUT;
+
+        if ((keys_pressed & key_mask) == key_mask)
+			if((access("_nds/Relaunch/rbmenu.nds", F_OK) == 0)) {
+				runNdsFile("_nds/Relaunch/rbmenu.nds", 0, NULL, false);
+			} else {
+				printf("\nError:\nrbmenu.nds wasn't found!");
+				exit_loop = true;
+			}
 		swiWaitForVBlank();
 	}
 }
@@ -82,7 +94,7 @@ int main(int argc, char **argv) {
 	}
 
 	CIniFile ini("/_nds/Relaunch/Relaunch.ini");
-	
+
 	bootA = ini.GetString("RELAUNCH", "BOOT_A_PATH", bootA);
 	bootB = ini.GetString("RELAUNCH", "BOOT_B_PATH", bootB);
 	bootX = ini.GetString("RELAUNCH", "BOOT_X_PATH", bootX);
