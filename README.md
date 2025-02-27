@@ -2,7 +2,7 @@
 
 - ported to BlocksDS toolchain, at least it builds why not?
 - title renamed to RelaunchB due to ^ and naming sucks
-- keep a copy of `load.bin` from devkitPro/nds-bootloader at commit `a8364ae` and, `bootstub.bin`from gm9i as build component (I don't know it is used or not)
+- keep a copy of `load.bin` from lifehackerhansol/blocksds-bootloader at commit `ccc915e` and, `bootstub.bin` from gm9i as build component (I don't know it is used or not)
 - renamed `menu.bin` to `rbmenu.nds` so in other menu you can just launch
 - you tell me
 
@@ -11,7 +11,7 @@
 - builds
 - may not work on some flashcards / environments. Tested:
   - AK2i (works)
-  - DSOne SDHC (main works, menu does not list entry THEN ARM9 GME error)
+  - DSOne SDHC (main works, menu does not list entry then ARM9 GME error)
   - DSi Unlaunch (main freeze, menu ARM9 GME error)
   - DSi Unlaunch -> akmenu-next (main freeze, menu works)
 - No plan to update feature

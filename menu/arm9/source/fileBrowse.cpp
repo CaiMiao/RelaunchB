@@ -53,7 +53,7 @@ std::unordered_map<std::string, std::set<std::string>> mapIgnoredPath{
 			"_dstwo",
 			"_dsone",
 			"__aio",
-			"__akaio",
+			// "__akaio",
 			"__rpg",
 			"_wfwd",
 			"gm9i",
@@ -72,7 +72,7 @@ std::unordered_map<std::string, std::set<std::string>> mapIgnoredPath{
 		}
 	},
 	{
-		"_nds", {
+		"_nds/", {
 			"nds-bootstrap",
 			"TWiLightMenu"
 		}
@@ -113,10 +113,11 @@ void findFiles(std::vector<DirEntry>& dirContents, std::vector<std::string> exte
 
 			stat(pent->d_name, &st);
 			dirEntry.name = pent->d_name;
-			if (setMp.find(strPath) != setMp.end())
-				dirEntry.fullPath = strPath + dirEntry.name;
-			else
-				dirEntry.fullPath = strPath + "/" + dirEntry.name;
+
+			// Ensure there's a path separator
+			if (strPath.back() != '/') strPath += '/';
+
+			dirEntry.fullPath = strPath + dirEntry.name;
 			dirEntry.isDirectory = (st.st_mode & S_IFDIR) ? true : false;
 			if(!(dirEntry.isDirectory) && dirEntry.name.length() >= 3) {
 				if (nameEndsWith(dirEntry.name, extensionList)) {

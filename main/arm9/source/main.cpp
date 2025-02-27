@@ -31,6 +31,26 @@
 #include "common/nds_loader_arm9.h"
 #include "common/inifile.h"
 
+int runNdsFile(const char *filename, int argc, const char **argv){
+	return runNdsFile(filename, argc, argv, false);
+}
+
+std::string bootA = "/_nds/Relaunch/extras/bootA.nds";
+std::string bootB = "/_nds/Relaunch/extras/bootB.nds";
+std::string bootX = "/_nds/Relaunch/extras/bootX.nds";
+std::string bootY = "/_nds/Relaunch/extras/bootY.nds";
+std::string bootR = "/_nds/Relaunch/extras/bootR.nds";
+std::string bootL = "/_nds/Relaunch/extras/bootL.nds";
+std::string bootDown = "/_nds/Relaunch/extras/bootDown.nds";
+std::string bootUp = "/_nds/Relaunch/extras/bootUp.nds";
+std::string bootLeft = "/_nds/Relaunch/extras/bootLeft.nds";
+std::string bootRight = "/_nds/Relaunch/extras/bootRight.nds";
+std::string bootStart = "/_nds/Relaunch/extras/bootStart.nds";
+std::string bootSelect = "/_nds/Relaunch/extras/bootSelect.nds";
+std::string bootTouch = "/_nds/Relaunch/extras/bootTouch.nds";
+std::string bootDefault = "/boot.nds";
+const char bootRbMenu[] = "_nds/Relaunch/rbmenu.nds";
+
 volatile bool exit_loop = false;
 //---------------------------------------------------------------------------------
 void stop (void) {
@@ -40,8 +60,9 @@ void stop (void) {
         uint16_t keys_pressed = ~REG_KEYINPUT;
 
         if ((keys_pressed & key_mask) == key_mask)
-			if((access("_nds/Relaunch/rbmenu.nds", F_OK) == 0)) {
-				runNdsFile("_nds/Relaunch/rbmenu.nds", 0, NULL, false);
+			if((access(bootRbMenu, F_OK) == 0)) {
+				int err = runNdsFile(bootRbMenu, 0, NULL);
+				printf("\noof: menu Error %d\n", err);
 			} else {
 				printf("\nError:\nrbmenu.nds wasn't found!");
 				exit_loop = true;
@@ -55,8 +76,7 @@ void bootApp (std::string bruh) {
 //---------------------------------------------------------------------------------
 	if((access(bruh.c_str(), F_OK) == 0)) {
 		const char *argarray[] = {bruh.c_str()};
-		// int err = runNdsFile(argarray[0], 1, argarray, false);
-		int err = runNdsFile(argarray[0], 0, NULL, false);
+		int err = runNdsFile(argarray[0], 1, argarray, false);
 		printf("oof: Error %i\n", err);
 		stop();
 	} else {
@@ -68,20 +88,6 @@ void bootApp (std::string bruh) {
 //---------------------------------------------------------------------------------
 int main(int argc, char **argv) {
 //---------------------------------------------------------------------------------
-	std::string bootA = "/_nds/Relaunch/extras/bootA.nds";
-	std::string bootB = "/_nds/Relaunch/extras/bootB.nds";
-	std::string bootX = "/_nds/Relaunch/extras/bootX.nds";
-	std::string bootY = "/_nds/Relaunch/extras/bootY.nds";
-	std::string bootR = "/_nds/Relaunch/extras/bootR.nds";
-	std::string bootL = "/_nds/Relaunch/extras/bootL.nds";
-	std::string bootDown = "/_nds/Relaunch/extras/bootDown.nds";
-	std::string bootUp = "/_nds/Relaunch/extras/bootUp.nds";
-	std::string bootLeft = "/_nds/Relaunch/extras/bootLeft.nds";
-	std::string bootRight = "/_nds/Relaunch/extras/bootRight.nds";
-	std::string bootStart = "/_nds/Relaunch/extras/bootStart.nds";
-	std::string bootSelect = "/_nds/Relaunch/extras/bootSelect.nds";
-	std::string bootTouch = "/_nds/Relaunch/extras/bootTouch.nds";
-	std::string bootDefault = "/boot.nds";
 
 	videoSetMode(MODE_0_2D);
 	videoSetModeSub(MODE_0_2D);
@@ -134,15 +140,15 @@ int main(int argc, char **argv) {
 	int pressed = keysHeld();
 
 	if ((pressed & (KEY_A | KEY_B)) == (KEY_A | KEY_B)) { // menu
-		if((access("_nds/Relaunch/rbmenu.nds", F_OK) == 0)) {
-			runNdsFile("_nds/Relaunch/rbmenu.nds", 0, NULL, false);
+		if((access(bootRbMenu, F_OK) == 0)) {
+			runNdsFile(bootRbMenu, 0, NULL, false);
 		} else {
 			printf("Error:\nrbmenu.nds wasn't found!");
 			stop();
 		}
 	} else if ((pressed & (KEY_A | KEY_X)) == (KEY_A | KEY_X)) { // menu alt
-		if((access("_nds/Relaunch/rbmenu.nds", F_OK) == 0)) {
-			runNdsFile("_nds/Relaunch/rbmenu.nds", 0, NULL, false);
+		if((access(bootRbMenu, F_OK) == 0)) {
+			runNdsFile(bootRbMenu, 0, NULL, false);
 		} else {
 			printf("Error:\nrbmenu.nds wasn't found!");
 			stop();
